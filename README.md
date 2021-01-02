@@ -870,7 +870,7 @@ _TASK MP.7 -> For all implemented keypoint detectors: Count the number of keypoi
 |0007.png|123|31|406|272|129|175|148|
 |0008.png|111|26|396|267|127|177|159|
 |0009.png|112|34|401|254|128|179|137|
-|cumulated sum|1179|248|4094|2763|1161|1670|1386|
+|cumulated sum|1179|248|4094|2763|1161|1670|1386|  
 Table 1: Keypoints on target vehicle for different detector types
 
 ### MP.8 - Performance Evaluation w. r. t. Number of Keypoint Matches
@@ -920,7 +920,7 @@ _TASK MP.8 -> Count the number of matched keypoints for all 10 images using all 
 |BRISK/SIFT|1648|
 |ORB/SIFT|763|
 |AKAZE/SIFT|1270|
-|SIFT/SIFT|800|
+|SIFT/SIFT|800|  
 Table 2: Sum of matched keypoints over 10 images for different detector - descriptor combinations
 
 Remarks:
@@ -976,7 +976,7 @@ _TASK MP.9 -> Log the time it takes for keypoint detection and descriptor extrac
 |BRISK/SIFT|0.0389692|0.0278033|0.0667725|
 |ORB/SIFT|0.0208197|0.0331877|0.0540074|
 |AKAZE/SIFT|0.0570165|0.0180464|0.0750629|
-|SIFT/SIFT|0.0908357|0.0674513|0.158287|
+|SIFT/SIFT|0.0908357|0.0674513|0.158287|  
 Table 3: Average processing time for keypoint detection and descriptor extraction over 10 images for different detector - descriptor combinations
 
 ### Final Preferrence
@@ -986,7 +986,7 @@ When taking the cumulated number of descriptor matches on the target vehicle and
 |:-:|:-:|:-:|
 |FAST/BRISK|2183|0.0058732|
 |FAST/BRIEF|2831|0.00700108|
-|FAST/ORB|2768|0.00667362|
+|FAST/ORB|2768|0.00667362|  
 Table 4: Number of descriptor matches and processing time for keypoint detection and descriptor extraction of the preferred variants
 
 Below images show descriptor matching between image 0000.png and 0001.png for using the three detector-descriptor combination from table 4.
