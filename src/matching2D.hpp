@@ -8,7 +8,7 @@
 //
 // ============================================================================
 
-// helper functions for 2D feature tracking
+// helper function declarations for 2D keypoint detection and 2D feature matching
 
 #ifndef matching2D_hpp
 #define matching2D_hpp
@@ -43,5 +43,6 @@ double matchDescriptors(
     std::vector<cv::KeyPoint> & kPtsSource, std::vector<cv::KeyPoint> & kPtsRef, cv::Mat & descSource, cv::Mat & descRef,
     std::vector<cv::DMatch> & matches, std::string descriptorType, std::string matcherType, std::string selectorType);
 void exportResultsToCSV(const std::string fullFilename, boost::circular_buffer<EvalResults> & resultBuffer);
+void exportOverallResultsToCSV(const std::string fullFilename, std::vector<boost::circular_buffer<EvalResults>> & evalResultBuffers);
 
 #endif /* matching2D_hpp */

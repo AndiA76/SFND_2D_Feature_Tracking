@@ -8,7 +8,7 @@
 //
 // ============================================================================
 
-// image frame data structure definition
+// image frame and evaluation result data structure definition
 
 #ifndef dataStructures_h
 #define dataStructures_h
@@ -49,6 +49,9 @@ struct EvalResults {  // represents the evaluation results collected over a vari
     int numKeypointsInROI;  // number of detected keypoints within the region of interest
     int numKeypointsInROILimited;  // limited number of detected keypoints within the region of interest
     int numDescMatches;  // number of matched keypoints within the region of interest
+    double meanDetectorResponse;  // mean keypont detector response
+    double meanKeypointDiam; // mean keypoint diameter
+    double varianceKeypointDiam; // variance of keypoint diameters
     double t_detKeypoints;  // processing time needed for keypoint detection (all keypoints)
     double t_descKeypoints;  // processing time needed for keypoint descriptor extraction (keypoints in ROI)
     double t_matchDescriptors;  // processing time needed for keypoint descriptor matching (keypoints in ROI)

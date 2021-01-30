@@ -8,6 +8,8 @@
 //
 // ============================================================================
 
+// function definitions for 2D keypoint detection and 2D feature matching
+
 #include <numeric>
 #include "matching2D.hpp"
 
@@ -78,7 +80,7 @@ double matchDescriptors(
         t = (double)cv::getTickCount(); // trigger timer
         matcher->knnMatch(descSource, descRef, knn_matches, 2); // finds the two (k = 2) best matches
         t = ((double)cv::getTickCount() - t) / cv::getTickFrequency(); // stop timer
-        cout << " KNN matching with n = " << knn_matches.size() << " matches in " << 1000 * t / 1.0 << " ms" << endl;
+        cout << "KNN matching with n = " << knn_matches.size() << " matches in " << 1000 * t / 1.0 << " ms" << endl;
 
         /* NOTE: 
            Descriotor distance ratio test versus cross-check matching:
@@ -254,8 +256,6 @@ double descKeypoints(
         throw "Error: Wrong input argument to descKeypoints(): Feature descriptor (extractor) type not defined!";
 	}
 
-    cout << "Selected feature descriptor (extractor) type = " << descExtractorType << endl;
-
     // perform feature description (timed process)
     double t = (double)cv::getTickCount();  // trigger timer
     extractor->compute(img, keypoints, descriptors);  // extract feature descriptors
@@ -315,13 +315,20 @@ double detKeypointsShiTomasi(vector<cv::KeyPoint> & keypoints, cv::Mat & img, bo
     // visualize results
     if (bVis)
     {
+        // plot image with keypoints
         cv::Mat visImage = img.clone();
         cv::drawKeypoints(
             img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
         string windowName = "Shi-Tomasi Corner Detector Results";
         cv::namedWindow(windowName, 6);
         imshow(windowName, visImage);
+
+        // wait for user key press
         cv::waitKey(0);
+
+        // clear temporary images and variables
+        visImage.release();
+        windowName.clear();
     }
 
     // return processing time for keypoint detection
@@ -414,13 +421,20 @@ double detKeypointsHarris(vector<cv::KeyPoint> & keypoints, cv::Mat & img, bool 
     // visualize results
     if (bVis)
     {
+        // plot image with keypoints
         cv::Mat visImage = img.clone();
         cv::drawKeypoints(
             img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
         string windowName = "Harris Corner Detector Results";
         cv::namedWindow(windowName, 6);
         imshow(windowName, visImage);
+
+        // wait for user key press
         cv::waitKey(0);
+
+        // clear temporary images and variables
+        visImage.release();
+        windowName.clear();
     }
 
     // return processing time for keypoint detection
@@ -561,9 +575,6 @@ double detKeypointsModern(
         throw "Error: Wrong input argument to detKeypoints(): Detector type not defined!";
 	}
 
-    cout << "Selected detector type = " << detectorType << endl;
-
-
     // detect keypoints (timed process)
 	double t = (double)cv::getTickCount();  // trigger timer
 	detector->detect(img, keypoints); // Detect keypoints
@@ -579,13 +590,20 @@ double detKeypointsModern(
 	// visualize results
 	if (bVis)
 	{
+        // plot image with keypoints
 		cv::Mat visImage = img.clone();
 		cv::drawKeypoints(
             img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 		string windowName = detectorType.append(" Detector Results");
 		cv::namedWindow(windowName, 6);
 		imshow(windowName, visImage);
+
+        // wait for user key press
 		cv::waitKey(0);
+
+        // clear temporary images and variables
+        visImage.release();
+        windowName.clear();
 	}
 
     // return processing time for keypoint detection
@@ -623,37 +641,47 @@ void exportResultsToCSV(const std::string fullFilename, boost::circular_buffer<E
             << "numKeypointsInROI" << ","
             << "bLimitKpts" << ","
             << "numKeypointsInROILimited" << ","
+            << "meanDetectorResponse" << ","
+            << "meanKeypointDiam" << ","
+            << "varianceKeypointDiam_av" << ","
             << "descExtractorType" << ","
             << "t_descKeypoints [s]" << ","
+            << "t_detKeypoints + t_descKeypoints [s]" << ","
             << "matcherType" << ","
             << "descriptorType" << ","
             << "selectorType" << ","
             << "numDescMatches" << ","
             << "t_matchDescriptors [s]" << ","
-            << "t_detKeypoints + t_descKeypoints [s]" << ","
             << "t_detKeypoints + t_descKeypoints + t_matchDescriptors [s]"
             << endl;
     
-    // Initialize cumulated sums of keypoints / descriptors / descriptor matches over all images
+    // initialize cumulated sums of keypoints / descriptors / descriptor matches over all images
     int numKeypoints_cumulated = 0;
     int numKeypointsInROI_cumulated = 0;
     int numKeypointsInROILimited_cumulated = 0;
     int numDescMatches_cumulated = 0;
 
-    // Initialize average processing times over all images
+    // initialize average of mean keypoint detector response over all images
+    double meanDetectorResponse_avg = 0.0;
+
+    // initialize average of mean and variance of the keypoint diameter distributions over all images
+    double meanKeypointDiam_avg = 0.0;
+    double varianceKeypointDiam_avg = 0.0;
+
+    // initialize average processing times over all images
     double t_detKeypoints_avg = 0.0;
     double t_descKeypoints_avg = 0.0;
-    double t_matchDescriptors_avg = 0.0;
     double t_sum_det_desc_avg = 0.0;
+    double t_matchDescriptors_avg = 0.0;
     double t_sum_det_desc_match_avg = 0.0;
 
-    // Counter
+    // counter
     int cnt = 0;
 
     // loop over the evaluation results for each image / image pair in the result buffer
     for (auto results = resultBuffer.begin(); results != resultBuffer.end(); results++)
     {
-        // Write the evaluation results to csv file
+        // write the evaluation results to csv file
         csv_file << results->imgFilename << ","
                 << results->detectorType << ","
                 << results->numKeypoints << ","
@@ -662,14 +690,17 @@ void exportResultsToCSV(const std::string fullFilename, boost::circular_buffer<E
                 << results->numKeypointsInROI << ","
                 << results->bLimitKpts << ","
                 << results->numKeypointsInROILimited << ","
+                << results->meanDetectorResponse << ","
+                << results->meanKeypointDiam << ","
+                << results->varianceKeypointDiam << ","
                 << results->descExtractorType << ","
                 << results->t_descKeypoints << ","
+                << results->t_sum_det_desc << ","
                 << results->matcherType << ","
                 << results->descriptorType << ","
                 << results->selectorType << ","
                 << results->numDescMatches << ","
                 << results->t_matchDescriptors << ","
-                << results->t_sum_det_desc << ","
                 << results->t_sum_det_desc_match << ","
                 << endl;
         
@@ -679,26 +710,40 @@ void exportResultsToCSV(const std::string fullFilename, boost::circular_buffer<E
         numKeypointsInROILimited_cumulated += results->numKeypointsInROILimited;
         numDescMatches_cumulated += results->numDescMatches;
 
+        // cumulate mean keypoint detector response over all images
+        meanDetectorResponse_avg += results->meanDetectorResponse;
+
+        // cumulate mean and variance of the per image keypoint diameter distribution
+        meanKeypointDiam_avg += results->meanKeypointDiam;
+        varianceKeypointDiam_avg += results->varianceKeypointDiam;
+
         // cumulate processing times
         t_detKeypoints_avg += results->t_detKeypoints;
         t_descKeypoints_avg += results->t_descKeypoints;
-        t_matchDescriptors_avg += results->t_matchDescriptors;
         t_sum_det_desc_avg += results->t_sum_det_desc;
+        t_matchDescriptors_avg += results->t_matchDescriptors;
         t_sum_det_desc_match_avg += results->t_sum_det_desc_match;
 
-        // Increment counter
+        // increment counter
         cnt++;
 
     }
 
-    // Calculate average processing times over all iamges
+    // calculate average mean value of detector response over all images
+    meanDetectorResponse_avg /= cnt;
+
+    // calculate average keypoint environment (mean and variance) over all images
+    meanKeypointDiam_avg /= cnt;
+    varianceKeypointDiam_avg /= cnt;
+
+    // calculate average processing times over all iamges
     t_detKeypoints_avg /= cnt;
     t_descKeypoints_avg /= cnt;
-    t_matchDescriptors_avg /= cnt;
     t_sum_det_desc_avg /= cnt;
+    t_matchDescriptors_avg /= cnt;
     t_sum_det_desc_match_avg /= cnt;
 
-    // Write the cumulated sums of detected keypoints over all images to csv file
+    // write the cumulated sums of detected keypoints over all images to csv file
     csv_file << "cumulated sum" << ","
                 << "" << ","
                 << numKeypoints_cumulated << ","
@@ -712,13 +757,16 @@ void exportResultsToCSV(const std::string fullFilename, boost::circular_buffer<E
                 << "" << ","
                 << "" << ","
                 << "" << ","
-                << numDescMatches_cumulated << ","
                 << "" << ","
+                << "" << ","
+                << "" << ","
+                << "" << ","
+                << numDescMatches_cumulated << ","
                 << "" << ","
                 << "" << ","
                 << endl;
 
-    // Write the average processing times over all images to csv file
+    // write the average processing times over all images to csv file
     csv_file << "average values" << ","
                 << "" << ","
                 << "" << ","
@@ -727,14 +775,17 @@ void exportResultsToCSV(const std::string fullFilename, boost::circular_buffer<E
                 << "" << ","
                 << "" << ","
                 << "" << ","
+                << meanDetectorResponse_avg << ","
+                << meanKeypointDiam_avg << ","
+                << varianceKeypointDiam_avg << ","
                 << "" << ","
                 << t_descKeypoints_avg << ","
+                << t_sum_det_desc_avg << ","
                 << "" << ","
                 << "" << ","
                 << "" << ","
                 << "" << ","
                 << t_matchDescriptors_avg << ","
-                << t_sum_det_desc_avg << ","
                 << t_sum_det_desc_match_avg << ","
                 << endl;
 
@@ -743,5 +794,123 @@ void exportResultsToCSV(const std::string fullFilename, boost::circular_buffer<E
     
     // print file location where the results have been stored
     cout << "Results have been exported to " << fullFilename << endl;
+
+}
+
+
+// export overall evaluation results to csv file
+void exportOverallResultsToCSV(const std::string fullFilename, std::vector<boost::circular_buffer<EvalResults>> & evalResultBuffers)
+{
+
+    // export overall evaluation results on all keypoint detector / descriptor extractor combinations to a CSV file with one 
+    // header line and as many rows as there are detector - descriptor extractor combinations
+    // @param: fullFilename - full filepath to the csv file
+    // @param: resultBuffers - vector of circular buffers holding the evaluation results for each detector / descriptor combination
+
+    // open csv file
+    ofstream csv_file;
+    csv_file.open(fullFilename, ios::out);
+
+    // write file header using the EvalResults data structure
+    csv_file << "id" << ","
+            << "keypoint detector" << ","
+            << "descriptor extractor" << ","
+            << "matcher type" << ","
+            << "descriptor type" << ","
+            << "selector type" << ","
+            << "cumulated sum of keypoints" << ","
+            << "cumulated sum of keypoints in ROI" << ","
+            << "cumulated sum of keypoints in ROI (limited)" << ","
+            << "cumulated sum of matched keypoints in ROI" << ","
+            << "t_detKeypoints_avg - average time for keypoint detection (all keypoints) in [s]" << ","
+            << "t_descKeypoints_avg - average time for descriptor extraction (only ROI) in [s]" << ","
+            << "t_detKeypoints_avg + t_descKeypoints_avg [s]" << ","
+            << "t_matchDescriptors_avg - average time for descriptor matching (only ROI) in [s[" << ","
+            << "t_detKeypoints_avg + t_descKeypoints_avg + t_matchDescriptors_avg in [s]" << ","
+            << endl;
+
+    // initialize detector / descriptor combination id
+    int id = 1;
+
+    // loop over the vector of result buffers for each detector / descriptor combination
+    for (auto resBuf = evalResultBuffers.begin(); resBuf != evalResultBuffers.end(); resBuf++)
+    {
+
+        // initialize cumulated sums of keypoints / descriptors / descriptor matches over all images
+        int numKeypoints_cumulated = 0;
+        int numKeypointsInROI_cumulated = 0;
+        int numKeypointsInROILimited_cumulated = 0;
+        int numDescMatches_cumulated = 0;
+
+        // initialize average processing times over all images
+        double t_detKeypoints_avg = 0.0;
+        double t_descKeypoints_avg = 0.0;
+        double t_sum_det_desc_avg = 0.0;
+        double t_matchDescriptors_avg = 0.0;
+        double t_sum_det_desc_match_avg = 0.0;
+        
+        // counter
+        int cnt = 0;
+
+        // loop over the evaluation results for each image / image pair in the current result buffer
+        for (auto results = (*resBuf).begin(); results != (*resBuf).end(); results++)
+        {
+
+            // cumulate keypoints / descriptors / descriptor matches over all images
+            numKeypoints_cumulated += results->numKeypoints;
+            numKeypointsInROI_cumulated += results->numKeypointsInROI;
+            numKeypointsInROILimited_cumulated += results->numKeypointsInROILimited;
+            if (results->numDescMatches >= 0)
+            {
+                numDescMatches_cumulated += results->numDescMatches;
+            }            
+
+            // cumulate processing times
+            t_detKeypoints_avg += results->t_detKeypoints;
+            t_descKeypoints_avg += results->t_descKeypoints;
+            t_sum_det_desc_avg += results->t_sum_det_desc;
+            t_matchDescriptors_avg += results->t_matchDescriptors;
+            t_sum_det_desc_match_avg += results->t_sum_det_desc_match;
+
+            // increment counter
+            cnt++;
+
+        }
+
+        // calculate average processing times over all iamges
+        t_detKeypoints_avg /= cnt;
+        t_descKeypoints_avg /= cnt;
+        t_sum_det_desc_avg /= cnt;
+        t_matchDescriptors_avg /= cnt;
+        t_sum_det_desc_match_avg /= cnt;
+
+        // write the cumulated sums of detected keypoints over all images to csv file
+        csv_file << id << ","
+                << ((*resBuf).end() - 1)->detectorType << ","
+                << ((*resBuf).end() - 1)->descExtractorType << ","
+                << ((*resBuf).end() - 1)->matcherType << ","
+                << ((*resBuf).end() - 1)->descriptorType << ","
+                << ((*resBuf).end() - 1)->selectorType << ","
+                << numKeypoints_cumulated << ","
+                << numKeypointsInROI_cumulated << ","
+                << numKeypointsInROILimited_cumulated << ","
+                << numDescMatches_cumulated << ","
+                << t_detKeypoints_avg << ","
+                << t_descKeypoints_avg << ","
+                << t_sum_det_desc_avg << ","
+                << t_matchDescriptors_avg << ","
+                << t_sum_det_desc_match_avg << ","
+                << endl;
+        
+        // increment detector / descriptor combination id
+        ++id;
+
+    }
+
+    // close csv file
+    csv_file.close();
+    
+    // print file location where the results have been stored
+    cout << "Overall results have been exported to " << fullFilename << endl;
 
 }
