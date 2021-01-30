@@ -532,7 +532,7 @@ Table 3: Average processing time for keypoint detection and descriptor extractio
 When taking the cumulated number of descriptor matches on the target vehicle and the processing time for keypoint detection and descriptor extraction as a selection criterion the following three detector / descriptor combinations would be my preference:
   
 |id|detector|descriptor|cumulated sum of matched keypoints in ROI|average processing time for keypoint detection and descriptor extraction sum in [s]|
-|:_:|:-:|:-:|:-:|:-:|
+|:-:|:-:|:-:|:-:|:-:|
 |18|FAST|BRIEF|2831|0.00282581|
 |19|FAST|ORB|2768|0.00285064|
 |17|FAST|BRISK|2183|0.00507683|
